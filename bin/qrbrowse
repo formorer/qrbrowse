@@ -10,21 +10,43 @@ use QRBrowse::Encoder qw(get_encoder);
 use Regexp::Common qw(URI);
 use File::Temp qw(tempdir);
 use File::Spec::Functions qw(catfile);
+use File::HomeDir;
+use YAML qw (LoadFile);
 
 my $VERSION = '0.0';
 
-my @patterns = (
+my $homedir = File::HomeDir->my_home;
+
+my $config;
+
+my @config_locations = (
+    catfile($homedir, '.qrbrowser'),
+    "$FindBin::RealBin/../etc/qrbrowser",
+    '/etc/qrbrowser'
+);
+
+$config->{'patterns'} = [
     $RE{URI}{HTTP}{-scheme => qr/https?/}, # from Regexp::Common
     qr/\d{4,}/,
-);
+];
 
-my %toescape = qw(
-    < &lt;
-    > &gt;
-    & &amp;
-);
+$config->{'toescape'} = {
+    '<' => '&lt;',
+    '>' => '&gt;',
+    '&' => '&amp;',
+};
 
-my @viewer = qw(w3m);
+$config->{'viewer'} = 'w3m';
+
+foreach my $config_file (reverse (@config_locations)) {
+   if (-e $config_file) {
+       my $local_conf = LoadFile($config_file);
+       #merge localconfig into config
+       while ( my ($key, $value) = each(%{$local_conf}) ) {
+           $config->{$key} = $value;
+       }
+    }
+}
 
 my $qrenc = get_encoder();
 
@@ -33,8 +55,12 @@ sub orpatterns {
     return "(?:".join(")|(?:", @_).")";
 }
 
-my $toescape = orpatterns(map { quotemeta } keys %toescape);
-my $pattern = orpatterns(@patterns, $toescape);
+my $toescape = orpatterns(map { quotemeta } keys %{ $config->{'toescape'} });
+
+
+my $pattern = orpatterns(map ( { my $ret = eval; if (!$@ && defined($ret)) {
+                $ret eq "Regexp" ? $ret : qr/$ret/ } else { () } } @{
+        $config->{'patterns'} } ), $toescape);
 my %qrfiles;
 my $qrfile = 0;
 my $tempdir = tempdir(CLEANUP => 1);
@@ -59,7 +85,7 @@ sub qrfile {
     }
     my $fn = $qrfiles{$text};
     my $qtext = $text;
-    $qtext =~ s/$toescape/$toescape{$&}/og;
+    $qtext =~ s/$toescape/$config->{'toescape'}->{$&}/og;
     return qq(<a href="$fn">$qtext</a>);
 }
 
@@ -69,8 +95,8 @@ open (my $textfh, ">", $textf)
 
 while (<>) {
     s/$pattern/
-        exists($toescape{$&}) ?
-        $toescape{$&} :
+        exists($config->{'toescape'}->{$&}) ?
+        $config->toescape->{$&} :
         qrfile($&)
     /oge;
     print $textfh $_."<br>";
@@ -78,4 +104,4 @@ while (<>) {
 close $textfh
     or die "Unable to close index file: $!";
 
-system(@viewer, $textf);
+system($config->{'viewer'}, $textf);
