@@ -1,0 +1,5 @@
+---
+patterns:
+    - \$RE{URI}{HTTP}{-scheme => qr/https?/}
+    - qr/\d{4,}/
+viewer: w3m
