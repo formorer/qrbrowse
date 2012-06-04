@@ -11,8 +11,10 @@ use Regexp::Common qw(URI);
 use File::Temp qw(tempdir);
 use File::Spec::Functions qw(catfile);
 use File::HomeDir;
-use YAML qw (LoadFile);
+use YAML::Tiny qw (LoadFile);
 
+$YAML::Syck::ImplicitTyping = 1;
+$YAML::Syck::SingleQuote = 1;
 my $VERSION = '0.0';
 
 my $homedir = File::HomeDir->my_home;
@@ -48,6 +50,8 @@ foreach my $config_file (reverse (@config_locations)) {
     }
 }
 
+use Data::Dumper;
+print Dumper($config);
 my $qrenc = get_encoder();
 
 sub orpatterns {

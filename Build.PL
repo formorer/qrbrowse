@@ -10,6 +10,8 @@ my $build = Module::Build->new
     dist_abstract => 'Browse a file with certain patterns being replaced by a link to a QR code ',
     requires    => {
         'Regexp::Common' => 0,
+        'YAML::Tiny'     => 0,
+        'File::HomeDir'  => 0,
     },
     script_files => 'bin/',
     license     => 'mit',

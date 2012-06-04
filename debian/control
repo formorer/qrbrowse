@@ -10,7 +10,13 @@ Vcs-Browser: https://github.com/formorer/qrbrowse/
 
 Package: qrbrowse
 Architecture: any
-Depends: ${shlibs:Depends}, ${misc:Depends}, libregexp-common-perl, libtext-qrcode-perl | qrencode, w3m
+Depends: libfile-homedir-perl,
+         libregexp-common-perl,
+         libtext-qrcode-perl | qrencode,
+         libyaml-tiny-perl,
+         w3m,
+         ${misc:Depends},
+         ${shlibs:Depends}
 Description: display qrcodes with mutt
  qrbrowse opens a text file (either read via stdin or filename passed via
  command-line) in a text browser, replacing certain patterns (like URLs or
